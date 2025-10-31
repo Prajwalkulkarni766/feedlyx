@@ -1,65 +1,41 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import { Box, Typography, Fab, Zoom } from '@mui/material'
 import { ExpandLess as ExpandLessIcon } from '@mui/icons-material'
 import { motion, AnimatePresence } from 'framer-motion'
 import PostCard from '../post/PostCard'
 import { FeedSkeleton } from '../common'
-import { debounce, throttle } from '../../utils/performanceUtils' // Fixed import
+import { usePosts, useLikePost } from '../../hooks/usePosts'
+import { debounce, throttle } from '../../utils/performanceUtils'
 import usePerformance from '../../hooks/usePerformance'
 
-// Mock data generator
-const generateMockPosts = (page, pageSize = 5) => {
-  const posts = []
-  const startIndex = (page - 1) * pageSize
-
-  for (let i = 0; i < pageSize; i++) {
-    const id = startIndex + i + 1
-    posts.push({
-      id: `post-${id}`,
-      user: {
-        id: `user-${id}`,
-        username: `user${id}`,
-        avatar: null,
-        isVerified: Math.random() > 0.7,
-        isOnline: Math.random() > 0.5,
-        hasStory: Math.random() > 0.3
-      },
-      content: id % 3 === 0 ? `This is post number ${id}. Check out this amazing content! 🚀` :
-        id % 3 === 1 ? `Just sharing some thoughts here... ✨\nWhat do you think about this?` :
-          `Another day, another post! 🌟\n#social #post ${id}`,
-      image: id % 4 === 0 ? `https://picsum.photos/600/400?random=${id}` : null,
-      likeCount: Math.floor(Math.random() * 50),
-      commentCount: Math.floor(Math.random() * 20),
-      isLiked: Math.random() > 0.7,
-      createdAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString()
-    })
-  }
-
-  return posts
-}
-
 const Feed = () => {
-  // Track performance of the Feed component
-  usePerformance('Feed', {
-    logMount: true,
-    logRender: false,
-    warnOnSlowRender: true
-  })
+  usePerformance('Feed')
 
-  const [posts, setPosts] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [hasMore, setHasMore] = useState(true)
-  const [page, setPage] = useState(1)
-  const [refreshing, setRefreshing] = useState(false)
+  // React Query hooks
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch
+  } = usePosts()
+
+  const likeMutation = useLikePost()
+
+  // State for UI
   const [showScrollTop, setShowScrollTop] = useState(false)
-  const [pullToRefreshState, setPullToRefreshState] = useState(0)
+  const [pullToRefreshState, setPullToRefreshState] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
 
+  // Refs
   const feedRef = useRef()
   const pullStartY = useRef(0)
 
-  // Memoize post data to prevent unnecessary re-renders
-  const memoizedPosts = useMemo(() => posts, [posts])
+  // Flatten all pages of posts
+  const allPosts = data?.pages?.flatMap(page => page.posts) || []
 
   // Debounced scroll handler
   const handleScroll = useCallback(
@@ -73,22 +49,53 @@ const Feed = () => {
   // Throttled infinite scroll check
   const checkInfiniteScroll = useCallback(
     throttle(() => {
-      if (loadingMore || !hasMore) return
+      if (isFetchingNextPage || !hasNextPage) return
 
       const { scrollTop, scrollHeight, clientHeight } = feedRef.current
       const scrollPosition = scrollTop + clientHeight
 
-      if (scrollPosition >= scrollHeight - 100) {
-        loadPosts(page + 1)
+      // Load more when 200px from bottom
+      if (scrollPosition >= scrollHeight - 200) {
+        fetchNextPage()
       }
     }, 500),
-    [loadingMore, hasMore, page]
+    [isFetchingNextPage, hasNextPage, fetchNextPage]
   )
 
-  // Optimized post handlers with useCallback
-  const handleLike = useCallback(async (postId, liked) => {
-    console.log(`Post ${postId} ${liked ? 'liked' : 'unliked'}`)
+  // Pull to refresh handlers
+  const handleTouchStart = useCallback((e) => {
+    if (feedRef.current?.scrollTop === 0) {
+      pullStartY.current = e.touches[0].clientY
+      setPullToRefreshState(true)
+    }
   }, [])
+
+  const handleTouchMove = useCallback((e) => {
+    if (!pullToRefreshState || pullStartY.current === 0) return
+
+    const currentY = e.touches[0].clientY
+    const diff = currentY - pullStartY.current
+
+    if (diff > 0) {
+      e.preventDefault()
+    }
+  }, [pullToRefreshState])
+
+  const handleTouchEnd = useCallback((e) => {
+    if (pullToRefreshState) {
+      setRefreshing(true)
+      setPullToRefreshState(false)
+      refetch().finally(() => {
+        setRefreshing(false)
+      })
+    }
+    pullStartY.current = 0
+  }, [pullToRefreshState, refetch])
+
+  // Post interaction handlers
+  const handleLike = useCallback((postId, liked) => {
+    likeMutation.mutate({ postId, liked })
+  }, [likeMutation])
 
   const handleComment = useCallback((post) => {
     console.log('Comment on post:', post.id)
@@ -98,39 +105,7 @@ const Feed = () => {
     console.log('Share post:', post.id)
   }, [])
 
-  // Memoized load posts function
-  const loadPosts = useCallback(async (pageNum, initial = false) => {
-    if (initial) setLoading(true)
-    else setLoadingMore(true)
-
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      const newPosts = generateMockPosts(pageNum)
-
-      if (pageNum === 1) {
-        setPosts(newPosts)
-      } else {
-        setPosts(prev => [...prev, ...newPosts])
-      }
-
-      setHasMore(pageNum < 5)
-      setPage(pageNum)
-    } catch (error) {
-      console.error('Error loading posts:', error)
-    } finally {
-      setLoading(false)
-      setLoadingMore(false)
-      setRefreshing(false)
-    }
-  }, [])
-
-  // Initial load
-  useEffect(() => {
-    loadPosts(1, true)
-  }, [loadPosts])
-
-  // Scroll event listener with cleanup
+  // Scroll event listeners
   useEffect(() => {
     const currentRef = feedRef.current
     if (currentRef) {
@@ -146,61 +121,31 @@ const Feed = () => {
     }
   }, [handleScroll, checkInfiniteScroll])
 
-  // Memoized post cards to prevent re-renders
-  const renderedPosts = useMemo(() =>
-    memoizedPosts.map((post, index) => (
-      <motion.div
-        key={post.id}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.3, delay: index * 0.1 }}
-      >
-        <PostCard
-          post={post}
-          onLike={handleLike}
-          onComment={handleComment}
-          onShare={handleShare}
-        />
-      </motion.div>
-    ))
-    , [memoizedPosts, handleLike, handleComment, handleShare])
+  // Loading states
+  if (isLoading && allPosts.length === 0) {
+    return <FeedSkeleton count={5} />
+  }
 
-  if (loading && posts.length === 0) {
-    return <FeedSkeleton count={3} />
+  if (isError) {
+    return (
+      <Box sx={{ textAlign: 'center', py: 4, px: 2 }}>
+        <Typography variant="h6" color="error" gutterBottom>
+          Error loading posts
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {error?.message || 'Please try refreshing the page'}
+        </Typography>
+      </Box>
+    )
   }
 
   return (
     <Box
       ref={feedRef}
       onScroll={handleScroll}
-      onTouchStart={(e) => {
-        if (feedRef.current?.scrollTop === 0) {
-          pullStartY.current = e.touches[0].clientY
-        }
-      }}
-      onTouchMove={(e) => {
-        if (pullStartY.current === 0) return
-
-        const currentY = e.touches[0].clientY
-        const diff = currentY - pullStartY.current
-
-        if (diff > 0) {
-          e.preventDefault()
-          const progress = Math.min(diff / 150, 1)
-          setPullToRefreshState(progress)
-        }
-      }}
-      onTouchEnd={(e) => {
-        if (pullToRefreshState > 0.7) {
-          setRefreshing(true)
-          setPullToRefreshState(0)
-          loadPosts(1, true)
-        } else {
-          setPullToRefreshState(0)
-        }
-        pullStartY.current = 0
-      }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       sx={{
         height: '100%',
         overflow: 'auto',
@@ -210,13 +155,59 @@ const Feed = () => {
         scrollbarWidth: 'none'
       }}
     >
-      {/* Rest of the component remains the same */}
+      {/* Pull to Refresh Indicator */}
+      <AnimatePresence>
+        {refreshing && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 60 }}
+            exit={{ opacity: 0, height: 0 }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                py: 2,
+                background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
+              }}
+            >
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              >
+                <Typography variant="body2" color="primary.main">
+                  Refreshing...
+                </Typography>
+              </motion.div>
+            </Box>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Posts List */}
       <Box sx={{ pb: 2 }}>
         <AnimatePresence mode="popLayout">
-          {renderedPosts}
+          {allPosts.map((post, index) => (
+            <motion.div
+              key={post.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3, delay: index * 0.1 }}
+            >
+              <PostCard
+                post={post}
+                onLike={handleLike}
+                onComment={handleComment}
+                onShare={handleShare}
+              />
+            </motion.div>
+          ))}
         </AnimatePresence>
 
-        {loadingMore && (
+        {/* Loading More Indicator */}
+        {isFetchingNextPage && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -226,7 +217,8 @@ const Feed = () => {
           </motion.div>
         )}
 
-        {!hasMore && posts.length > 0 && (
+        {/* End of Feed Message */}
+        {!hasNextPage && allPosts.length > 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -241,6 +233,7 @@ const Feed = () => {
         )}
       </Box>
 
+      {/* Scroll to Top FAB */}
       <Zoom in={showScrollTop}>
         <Fab
           onClick={() => feedRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -255,6 +248,18 @@ const Feed = () => {
           <ExpandLessIcon />
         </Fab>
       </Zoom>
+
+      {/* Empty State */}
+      {!isLoading && allPosts.length === 0 && (
+        <Box sx={{ textAlign: 'center', py: 4, px: 2 }}>
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            No posts yet
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Be the first to share something amazing! ✨
+          </Typography>
+        </Box>
+      )}
     </Box>
   )
 }
