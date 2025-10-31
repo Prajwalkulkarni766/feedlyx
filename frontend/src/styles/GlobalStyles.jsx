@@ -12,11 +12,17 @@ const GlobalStyles = () => {
         html: {
           width: '100%',
           height: '100%',
-          WebkitOverflowScrolling: 'touch',
+          WebkitOverflowScrolling: 'touch', // Momentum scrolling on iOS
+          fontSize: '16px', // Base font size for rem units
         },
         body: {
           width: '100%',
           height: '100%',
+          // Prevent text size adjustment on orientation change
+          WebkitTextSizeAdjust: '100%',
+          // Improve font rendering
+          WebkitFontSmoothing: 'antialiased',
+          MozOsxFontSmoothing: 'grayscale',
         },
         '#root': {
           width: '100%',
@@ -24,14 +30,14 @@ const GlobalStyles = () => {
         },
         // Custom scrollbar
         '::-webkit-scrollbar': {
-          width: '8px',
+          width: '6px',
         },
         '::-webkit-scrollbar-track': {
           background: '#1e293b',
         },
         '::-webkit-scrollbar-thumb': {
           background: '#475569',
-          borderRadius: '4px',
+          borderRadius: '3px',
         },
         '::-webkit-scrollbar-thumb:hover': {
           background: '#64748b',
@@ -99,22 +105,51 @@ const GlobalStyles = () => {
             backgroundPosition: '0% 50%',
           },
         },
-        // Custom cursor effects
-        '.magnetic-hover': {
-          transition: 'transform 0.3s ease',
+        // Mobile optimizations
+        '@media (max-width: 768px)': {
+          // Improve tap targets
+          'button, [role="button"]': {
+            minHeight: '44px',
+            minWidth: '44px',
+          },
+          // Prevent zoom on input focus
+          'input, select, textarea': {
+            fontSize: '16px !important',
+          },
+          // Smooth scrolling
+          'html': {
+            scrollBehavior: 'smooth',
+          },
         },
-        '.magnetic-hover:hover': {
-          transform: 'scale(1.05)',
+        // Touch device optimizations
+        '@media (hover: none) and (pointer: coarse)': {
+          // Disable hover effects on touch devices
+          '.hover-effect:hover': {
+            transform: 'none !important',
+          },
+          // Improve touch feedback
+          '.MuiButton-root:active, .MuiIconButton-root:active': {
+            transform: 'scale(0.95)',
+            transition: 'transform 0.1s ease',
+          },
         },
-        // Smooth transitions for all interactive elements
-        'button, a, .interactive': {
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important',
+        // High DPI screen optimizations
+        '@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi)': {
+          // Crisper borders and text
+          '.MuiCard-root': {
+            borderWidth: '0.5px',
+          },
         },
         // Focus styles for accessibility
         '*:focus-visible': {
           outline: '2px solid #667eea',
           outlineOffset: '2px',
           borderRadius: '4px',
+        },
+        // Selection styles
+        '::selection': {
+          background: 'rgba(102, 126, 234, 0.3)',
+          color: 'white',
         },
       }}
     />

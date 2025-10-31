@@ -19,15 +19,17 @@ import {
 } from '@mui/icons-material'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CustomAvatar } from '../common'
-import { GlassHover, FloatingHover } from '../animations' // Fixed import
+import { GlassHover, FloatingHover } from '../animations'
 import EngagementBar from '../engagement/EngagementBar'
 import { formatDistanceToNow } from 'date-fns'
+import useResponsive from '../../hooks/useResponsive'
 
 const PostCard = ({ post, onLike, onComment, onShare }) => {
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [anchorEl, setAnchorEl] = useState(null)
   const [imageError, setImageError] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
+  const { isMobile, isTablet } = useResponsive()
 
   const handleBookmark = () => {
     setIsBookmarked(!isBookmarked)
@@ -55,47 +57,72 @@ const PostCard = ({ post, onLike, onComment, onShare }) => {
     setImageLoaded(true)
   }
 
+  const getAvatarSize = () => {
+    if (isMobile) return 40
+    if (isTablet) return 44
+    return 44
+  }
+
+  const getContentPadding = () => {
+    if (isMobile) return { pt: 0, pb: 0.5, px: 2 }
+    return { pt: 0, pb: 1, px: 2 }
+  }
+
   return (
-    <FloatingHover intensity={3}>
+    <FloatingHover intensity={isMobile ? 2 : 3}>
       <GlassHover intensity={0.05}>
         <Card
           sx={{
             background: 'rgba(30, 41, 59, 0.8)',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: 3,
-            mb: 2,
+            borderRadius: isMobile ? 2 : 3,
+            mb: isMobile ? 1.5 : 2,
             overflow: 'visible',
             cursor: 'pointer',
+            mx: isMobile ? 0 : 'auto',
             '&:hover': {
               borderColor: 'rgba(102, 126, 234, 0.3)',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)'
+              boxShadow: isMobile ? '0 4px 16px rgba(0, 0, 0, 0.2)' : '0 8px 32px rgba(0, 0, 0, 0.2)'
             }
           }}
         >
           {/* Header */}
           <CardHeader
             avatar={
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <motion.div whileHover={{ scale: isMobile ? 1 : 1.1 }} whileTap={{ scale: 0.9 }}>
                 <CustomAvatar
                   username={post.user.username}
                   src={post.user.avatar}
-                  size={44}
+                  size={getAvatarSize()}
                   isOnline={post.user.isOnline}
                   hasStory={post.user.hasStory}
                 />
               </motion.div>
             }
             action={
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                <IconButton onClick={handleMenuOpen}>
-                  <MoreIcon sx={{ color: 'text.secondary' }} />
+              <motion.div whileHover={{ scale: isMobile ? 1 : 1.1 }} whileTap={{ scale: 0.9 }}>
+                <IconButton
+                  onClick={handleMenuOpen}
+                  size={isMobile ? "small" : "medium"}
+                >
+                  <MoreIcon sx={{
+                    fontSize: isMobile ? 18 : 24,
+                    color: 'text.secondary'
+                  }} />
                 </IconButton>
               </motion.div>
             }
             title={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="subtitle1" fontWeight="bold" color="text.primary">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Typography
+                  variant={isMobile ? "subtitle2" : "subtitle1"}
+                  fontWeight="bold"
+                  color="text.primary"
+                  sx={{
+                    fontSize: isMobile ? '0.875rem' : '1rem'
+                  }}
+                >
                   {post.user.username}
                 </Typography>
                 {post.user.isVerified && (
@@ -110,8 +137,11 @@ const PostCard = ({ post, onLike, onComment, onShare }) => {
                       sx={{
                         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                         color: 'white',
-                        fontSize: '0.7rem',
-                        height: 20
+                        fontSize: isMobile ? '0.6rem' : '0.7rem',
+                        height: isMobile ? 16 : 20,
+                        '& .MuiChip-label': {
+                          px: isMobile ? 1 : 1.5
+                        }
                       }}
                     />
                   </motion.div>
@@ -124,21 +154,32 @@ const PostCard = ({ post, onLike, onComment, onShare }) => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.1 }}
               >
-                <Typography variant="caption" color="text.secondary">
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{
+                    fontSize: isMobile ? '0.6875rem' : '0.75rem'
+                  }}
+                >
                   {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
                 </Typography>
               </motion.div>
             }
             sx={{
-              pb: 1,
+              pb: isMobile ? 0.5 : 1,
+              px: isMobile ? 1.5 : 2,
+              pt: isMobile ? 1.5 : 2,
               '& .MuiCardHeader-content': {
                 overflow: 'hidden'
+              },
+              '& .MuiCardHeader-avatar': {
+                mr: isMobile ? 1 : 2
               }
             }}
           />
 
           {/* Content */}
-          <CardContent sx={{ pt: 0, pb: 1 }}>
+          <CardContent sx={getContentPadding()}>
             {post.content && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -146,13 +187,14 @@ const PostCard = ({ post, onLike, onComment, onShare }) => {
                 transition={{ delay: 0.1 }}
               >
                 <Typography
-                  variant="body1"
+                  variant={isMobile ? "body2" : "body1"}
                   color="text.primary"
                   sx={{
-                    mb: post.image ? 2 : 0,
-                    lineHeight: 1.6,
+                    mb: post.image ? (isMobile ? 1.5 : 2) : 0,
+                    lineHeight: isMobile ? 1.5 : 1.6,
                     whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word'
+                    wordBreak: 'break-word',
+                    fontSize: isMobile ? '0.875rem' : '1rem'
                   }}
                 >
                   {post.content}
@@ -163,10 +205,11 @@ const PostCard = ({ post, onLike, onComment, onShare }) => {
             {post.image && !imageError && (
               <Box
                 sx={{
-                  borderRadius: 2,
+                  borderRadius: isMobile ? 1 : 2,
                   overflow: 'hidden',
                   position: 'relative',
-                  bgcolor: 'rgba(0,0,0,0.1)'
+                  bgcolor: 'rgba(0,0,0,0.1)',
+                  mx: isMobile ? -2 : 0 // Full width on mobile
                 }}
               >
                 <AnimatePresence>
@@ -202,7 +245,7 @@ const PostCard = ({ post, onLike, onComment, onShare }) => {
                     onLoad={handleImageLoad}
                     onError={() => setImageError(true)}
                     sx={{
-                      maxHeight: 400,
+                      maxHeight: isMobile ? 300 : 400,
                       objectFit: 'cover',
                       width: '100%'
                     }}
@@ -235,7 +278,8 @@ const PostCard = ({ post, onLike, onComment, onShare }) => {
                 backdropFilter: 'blur(20px)',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
                 borderRadius: 2,
-                mt: 1
+                mt: 1,
+                minWidth: isMobile ? 160 : 200
               }
             }}
           >
@@ -243,7 +287,7 @@ const PostCard = ({ post, onLike, onComment, onShare }) => {
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
             >
-              <MenuItem onClick={handleBookmark}>
+              <MenuItem onClick={handleBookmark} sx={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={isBookmarked ? 'bookmarked' : 'not-bookmarked'}
@@ -264,7 +308,7 @@ const PostCard = ({ post, onLike, onComment, onShare }) => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.05 }}
             >
-              <MenuItem onClick={handleShare}>
+              <MenuItem onClick={handleShare} sx={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>
                 Share
               </MenuItem>
             </motion.div>
@@ -276,7 +320,13 @@ const PostCard = ({ post, onLike, onComment, onShare }) => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <MenuItem onClick={handleReport} sx={{ color: 'error.main' }}>
+              <MenuItem
+                onClick={handleReport}
+                sx={{
+                  color: 'error.main',
+                  fontSize: isMobile ? '0.875rem' : '1rem'
+                }}
+              >
                 Report
               </MenuItem>
             </motion.div>
