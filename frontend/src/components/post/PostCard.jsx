@@ -10,23 +10,24 @@ import {
   Menu,
   MenuItem,
   Divider,
-  IconButton,
+  IconButton
 } from '@mui/material'
 import {
   MoreVert as MoreIcon,
   BookmarkBorder as BookmarkIcon,
   Bookmark as BookmarkFilledIcon
 } from '@mui/icons-material'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { CustomAvatar } from '../common'
+import { GlassHover, FloatingHover } from '../animations' // Fixed import
 import EngagementBar from '../engagement/EngagementBar'
 import { formatDistanceToNow } from 'date-fns'
-import { Share as ShareIcon } from '@mui/icons-material'
 
 const PostCard = ({ post, onLike, onComment, onShare }) => {
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [anchorEl, setAnchorEl] = useState(null)
   const [imageError, setImageError] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
 
   const handleBookmark = () => {
     setIsBookmarked(!isBookmarked)
@@ -50,158 +51,239 @@ const PostCard = ({ post, onLike, onComment, onShare }) => {
     handleMenuClose()
   }
 
+  const handleImageLoad = () => {
+    setImageLoaded(true)
+  }
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <Card
-        sx={{
-          background: 'rgba(30, 41, 59, 0.8)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          borderRadius: 3,
-          mb: 2,
-          overflow: 'visible',
-          '&:hover': {
-            borderColor: 'rgba(102, 126, 234, 0.3)',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)'
-          }
-        }}
-      >
-        {/* Header */}
-        <CardHeader
-          avatar={
-            <CustomAvatar
-              username={post.user.username}
-              src={post.user.avatar}
-              size={44}
-              isOnline={post.user.isOnline}
-              hasStory={post.user.hasStory}
-            />
-          }
-          action={
-            <>
-              <IconButton onClick={handleMenuOpen}>
-                <MoreIcon sx={{ color: 'text.secondary' }} />
-              </IconButton>
-              <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleMenuClose}
-                PaperProps={{
-                  sx: {
-                    background: 'rgba(30, 41, 59, 0.95)',
-                    backdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: 2,
-                    mt: 1
-                  }
-                }}
-              >
-                <MenuItem onClick={handleBookmark}>
-                  {isBookmarked ? <BookmarkFilledIcon sx={{ mr: 1 }} /> : <BookmarkIcon sx={{ mr: 1 }} />}
-                  {isBookmarked ? 'Saved' : 'Save Post'}
-                </MenuItem>
-                <MenuItem onClick={handleShare}>
-                  <ShareIcon sx={{ mr: 1 }} />
-                  Share
-                </MenuItem>
-                <Divider sx={{ my: 0.5, bgcolor: 'rgba(255,255,255,0.1)' }} />
-                <MenuItem onClick={handleReport} sx={{ color: 'error.main' }}>
-                  Report
-                </MenuItem>
-              </Menu>
-            </>
-          }
-          title={
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="subtitle1" fontWeight="bold" color="text.primary">
-                {post.user.username}
-              </Typography>
-              {post.user.isVerified && (
-                <Chip
-                  label="Verified"
-                  size="small"
-                  sx={{
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    color: 'white',
-                    fontSize: '0.7rem',
-                    height: 20
-                  }}
-                />
-              )}
-            </Box>
-          }
-          subheader={
-            <Typography variant="caption" color="text.secondary">
-              {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
-            </Typography>
-          }
+    <FloatingHover intensity={3}>
+      <GlassHover intensity={0.05}>
+        <Card
           sx={{
-            pb: 1,
-            '& .MuiCardHeader-content': {
-              overflow: 'hidden'
+            background: 'rgba(30, 41, 59, 0.8)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: 3,
+            mb: 2,
+            overflow: 'visible',
+            cursor: 'pointer',
+            '&:hover': {
+              borderColor: 'rgba(102, 126, 234, 0.3)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)'
             }
           }}
-        />
+        >
+          {/* Header */}
+          <CardHeader
+            avatar={
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <CustomAvatar
+                  username={post.user.username}
+                  src={post.user.avatar}
+                  size={44}
+                  isOnline={post.user.isOnline}
+                  hasStory={post.user.hasStory}
+                />
+              </motion.div>
+            }
+            action={
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <IconButton onClick={handleMenuOpen}>
+                  <MoreIcon sx={{ color: 'text.secondary' }} />
+                </IconButton>
+              </motion.div>
+            }
+            title={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="subtitle1" fontWeight="bold" color="text.primary">
+                  {post.user.username}
+                </Typography>
+                {post.user.isVerified && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.2, type: "spring" }}
+                  >
+                    <Chip
+                      label="Verified"
+                      size="small"
+                      sx={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'white',
+                        fontSize: '0.7rem',
+                        height: 20
+                      }}
+                    />
+                  </motion.div>
+                )}
+              </Box>
+            }
+            subheader={
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.1 }}
+              >
+                <Typography variant="caption" color="text.secondary">
+                  {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+                </Typography>
+              </motion.div>
+            }
+            sx={{
+              pb: 1,
+              '& .MuiCardHeader-content': {
+                overflow: 'hidden'
+              }
+            }}
+          />
 
-        {/* Content */}
-        <CardContent sx={{ pt: 0, pb: 1 }}>
-          {post.content && (
-            <Typography
-              variant="body1"
-              color="text.primary"
-              sx={{
-                mb: post.image ? 2 : 0,
-                lineHeight: 1.6,
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word'
-              }}
-            >
-              {post.content}
-            </Typography>
-          )}
+          {/* Content */}
+          <CardContent sx={{ pt: 0, pb: 1 }}>
+            {post.content && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <Typography
+                  variant="body1"
+                  color="text.primary"
+                  sx={{
+                    mb: post.image ? 2 : 0,
+                    lineHeight: 1.6,
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word'
+                  }}
+                >
+                  {post.content}
+                </Typography>
+              </motion.div>
+            )}
 
-          {post.image && !imageError && (
-            <Box
-              sx={{
-                borderRadius: 2,
-                overflow: 'hidden',
-                position: 'relative',
-                bgcolor: 'rgba(0,0,0,0.1)'
-              }}
-            >
-              <CardMedia
-                component="img"
-                height="auto"
-                image={post.image}
-                alt="Post image"
-                onError={() => setImageError(true)}
+            {post.image && !imageError && (
+              <Box
                 sx={{
-                  maxHeight: 400,
-                  objectFit: 'cover',
-                  width: '100%'
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  position: 'relative',
+                  bgcolor: 'rgba(0,0,0,0.1)'
                 }}
-              />
-            </Box>
-          )}
-        </CardContent>
+              >
+                <AnimatePresence>
+                  {!imageLoaded && (
+                    <motion.div
+                      initial={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'linear-gradient(90deg, #1e293b 0%, #334155 50%, #1e293b 100%)',
+                        backgroundSize: '200% 100%',
+                        animation: 'shimmer 2s infinite'
+                      }}
+                    />
+                  )}
+                </AnimatePresence>
 
-        {/* Engagement Bar */}
-        <EngagementBar
-          postId={post.id}
-          initialLikes={post.likeCount}
-          initialComments={post.commentCount}
-          initialViews={post.viewCount || 0}
-          initialLiked={post.isLiked}
-          onLike={onLike}
-          onComment={onComment}
-          onShare={onShare}
-        />
-      </Card>
-    </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, scale: 1.1 }}
+                  animate={{ opacity: imageLoaded ? 1 : 0, scale: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <CardMedia
+                    component="img"
+                    height="auto"
+                    image={post.image}
+                    alt="Post image"
+                    onLoad={handleImageLoad}
+                    onError={() => setImageError(true)}
+                    sx={{
+                      maxHeight: 400,
+                      objectFit: 'cover',
+                      width: '100%'
+                    }}
+                  />
+                </motion.div>
+              </Box>
+            )}
+          </CardContent>
+
+          {/* Engagement Bar */}
+          <EngagementBar
+            postId={post.id}
+            initialLikes={post.likeCount}
+            initialComments={post.commentCount}
+            initialViews={post.viewCount || 0}
+            initialLiked={post.isLiked}
+            onLike={onLike}
+            onComment={onComment}
+            onShare={onShare}
+          />
+
+          {/* Menu */}
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+            PaperProps={{
+              sx: {
+                background: 'rgba(30, 41, 59, 0.95)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: 2,
+                mt: 1
+              }
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+            >
+              <MenuItem onClick={handleBookmark}>
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={isBookmarked ? 'bookmarked' : 'not-bookmarked'}
+                    initial={{ scale: 0.8 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0.8 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                  >
+                    {isBookmarked ? <BookmarkFilledIcon /> : <BookmarkIcon />}
+                    {isBookmarked ? 'Saved' : 'Save Post'}
+                  </motion.span>
+                </AnimatePresence>
+              </MenuItem>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.05 }}
+            >
+              <MenuItem onClick={handleShare}>
+                Share
+              </MenuItem>
+            </motion.div>
+
+            <Divider sx={{ my: 0.5, bgcolor: 'rgba(255,255,255,0.1)' }} />
+
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <MenuItem onClick={handleReport} sx={{ color: 'error.main' }}>
+                Report
+              </MenuItem>
+            </motion.div>
+          </Menu>
+        </Card>
+      </GlassHover>
+    </FloatingHover>
   )
 }
 
