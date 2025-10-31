@@ -1,19 +1,37 @@
 import { Routes, Route } from 'react-router-dom'
+import { lazy } from 'react'
 import AppShell from './components/layout/AppShell'
 import ProtectedRoute from './components/auth/ProtectedRoute'
-import Login from './pages/Auth/Login'
-import Signup from './pages/Auth/Signup'
-import Home from './pages/Home/Home'
-import CreatePost from './pages/CreatePost/CreatePost'
-import Profile from './pages/Profile/Profile'
-import { FadeTransition, PageLoader } from './components/animations' // Fixed import
+import LazyLoader from './components/lazy/LazyLoader'
+import { FadeTransition, PageLoader } from './components/animations'
 import { useState, useEffect } from 'react'
+import { Box, CircularProgress, Typography } from '@mui/material'
 
-const ExplorePage = () => (
-  <div style={{ color: 'white', textAlign: 'center', padding: '2rem' }}>
-    <h1>🔍 Explore</h1>
-    <p>Discover new content coming soon...</p>
-  </div>
+// Lazy load pages
+const Login = lazy(() => import('./pages/Auth/Login'))
+const Signup = lazy(() => import('./pages/Auth/Signup'))
+const Home = lazy(() => import('./pages/Home/Home'))
+const CreatePost = lazy(() => import('./pages/CreatePost/CreatePost'))
+const Profile = lazy(() => import('./pages/Profile/Profile'))
+const Explore = lazy(() => import('./pages/Explore/Explore'))
+
+// Fallback component for lazy loading
+const PageFallback = () => (
+  <Box
+    sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: '50vh',
+      gap: 2
+    }}
+  >
+    <CircularProgress size={40} />
+    <Typography variant="body2" color="text.secondary">
+      Loading page...
+    </Typography>
+  </Box>
 )
 
 function App() {
@@ -23,7 +41,7 @@ function App() {
     // Simulate initial loading
     const timer = setTimeout(() => {
       setLoading(false)
-    }, 2000)
+    }, 1500)
 
     return () => clearTimeout(timer)
   }, [])
@@ -37,30 +55,64 @@ function App() {
       <FadeTransition>
         <Routes>
           {/* Public Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+          <Route
+            path="/login"
+            element={
+              <LazyLoader fallback={<PageFallback />}>
+                <Login />
+              </LazyLoader>
+            }
+          />
+          <Route
+            path="/signup"
+            element={
+              <LazyLoader fallback={<PageFallback />}>
+                <Signup />
+              </LazyLoader>
+            }
+          />
 
           {/* Protected Routes */}
-          <Route path="/" element={
-            <ProtectedRoute>
-              <Home />
-            </ProtectedRoute>
-          } />
-          <Route path="/profile" element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          } />
-          <Route path="/create-post" element={
-            <ProtectedRoute>
-              <CreatePost />
-            </ProtectedRoute>
-          } />
-          <Route path="/explore" element={
-            <ProtectedRoute>
-              <ExplorePage />
-            </ProtectedRoute>
-          } />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <LazyLoader fallback={<PageFallback />}>
+                  <Home />
+                </LazyLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <LazyLoader fallback={<PageFallback />}>
+                  <Profile />
+                </LazyLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/create-post"
+            element={
+              <ProtectedRoute>
+                <LazyLoader fallback={<PageFallback />}>
+                  <CreatePost />
+                </LazyLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/explore"
+            element={
+              <ProtectedRoute>
+                <LazyLoader fallback={<PageFallback />}>
+                  <Explore />
+                </LazyLoader>
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </FadeTransition>
     </AppShell>

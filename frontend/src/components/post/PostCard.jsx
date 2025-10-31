@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, memo } from 'react'
+// import { postPropsAreEqual } from '../optimization/memoization'
 import {
   Card,
   CardHeader,
@@ -24,7 +25,17 @@ import EngagementBar from '../engagement/EngagementBar'
 import { formatDistanceToNow } from 'date-fns'
 import useResponsive from '../../hooks/useResponsive'
 
-const PostCard = ({ post, onLike, onComment, onShare }) => {
+const postPropsAreEqual = (prevProps, nextProps) => {
+  return (
+    prevProps.post.id === nextProps.post.id &&
+    prevProps.post.likeCount === nextProps.post.likeCount &&
+    prevProps.post.commentCount === nextProps.post.commentCount &&
+    prevProps.post.isLiked === nextProps.post.isLiked &&
+    prevProps.post.content === nextProps.post.content
+  )
+}
+
+const PostCard = memo(({ post, onLike, onComment, onShare }) => {
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [anchorEl, setAnchorEl] = useState(null)
   const [imageError, setImageError] = useState(false)
@@ -335,6 +346,6 @@ const PostCard = ({ post, onLike, onComment, onShare }) => {
       </GlassHover>
     </FloatingHover>
   )
-}
+}, postPropsAreEqual)
 
 export default PostCard
