@@ -4,19 +4,13 @@ import ProtectedRoute from './components/auth/ProtectedRoute'
 import Login from './pages/Auth/Login'
 import Signup from './pages/Auth/Signup'
 import Home from './pages/Home/Home'
+import CreatePost from './pages/CreatePost/CreatePost'
 
 // Temporary placeholder components
 const ProfilePage = () => (
   <div style={{ color: 'white', textAlign: 'center', padding: '2rem' }}>
     <h1>👤 Profile</h1>
     <p>User profile coming soon...</p>
-  </div>
-)
-
-const CreatePostPage = () => (
-  <div style={{ color: 'white', textAlign: 'center', padding: '2rem' }}>
-    <h1>📝 Create Post</h1>
-    <p>Post creation form coming soon...</p>
   </div>
 )
 
@@ -48,7 +42,7 @@ function App() {
         } />
         <Route path="/create-post" element={
           <ProtectedRoute>
-            <CreatePostPage />
+            <CreatePost />
           </ProtectedRoute>
         } />
         <Route path="/explore" element={

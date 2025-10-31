@@ -1,7 +1,7 @@
 import { Button, Box } from '@mui/material'
 import { motion } from 'framer-motion'
 
-const MotionButton = motion(Button)
+const MotionButton = motion.create(Button)
 
 const CustomButton = ({
   children,
