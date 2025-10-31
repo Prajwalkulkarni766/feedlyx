@@ -22,7 +22,7 @@ import {
   BookmarkBorder as BookmarkIcon,
   Bookmark as BookmarkFilledIcon
 } from '@mui/icons-material'
-import { AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { CustomAvatar, CustomButton } from '../common'
 import { formatDistanceToNow } from 'date-fns'
 
