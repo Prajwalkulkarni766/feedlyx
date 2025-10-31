@@ -3,15 +3,9 @@ import AppShell from './components/layout/AppShell'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import Login from './pages/Auth/Login'
 import Signup from './pages/Auth/Signup'
+import Home from './pages/Home/Home'
 
 // Temporary placeholder components
-const HomePage = () => (
-  <div style={{ color: 'white', textAlign: 'center', padding: '2rem' }}>
-    <h1>🏠 Home Feed</h1>
-    <p>Beautiful posts will appear here soon...</p>
-  </div>
-)
-
 const ProfilePage = () => (
   <div style={{ color: 'white', textAlign: 'center', padding: '2rem' }}>
     <h1>👤 Profile</h1>
@@ -44,7 +38,7 @@ function App() {
         {/* Protected Routes */}
         <Route path="/" element={
           <ProtectedRoute>
-            <HomePage />
+            <Home />
           </ProtectedRoute>
         } />
         <Route path="/profile" element={
