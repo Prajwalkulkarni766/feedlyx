@@ -36,6 +36,13 @@ const GlobalStyles = () => {
         '::-webkit-scrollbar-thumb:hover': {
           background: '#64748b',
         },
+        // Button ripple effect
+        '.button-ripple': {
+          transition: 'left 0.5s ease',
+        },
+        '.MuiButton-root:hover .button-ripple': {
+          left: '100%',
+        },
       }}
     />
   );
