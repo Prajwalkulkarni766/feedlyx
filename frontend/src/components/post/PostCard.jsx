@@ -4,50 +4,29 @@ import {
   CardHeader,
   CardContent,
   CardMedia,
-  CardActions,
   Typography,
-  IconButton,
   Box,
   Chip,
   Menu,
   MenuItem,
-  Divider
+  Divider,
+  IconButton,
 } from '@mui/material'
 import {
-  Favorite as FavoriteIcon,
-  FavoriteBorder as FavoriteBorderIcon,
-  ChatBubbleOutline as CommentIcon,
-  Share as ShareIcon,
   MoreVert as MoreIcon,
   BookmarkBorder as BookmarkIcon,
   Bookmark as BookmarkFilledIcon
 } from '@mui/icons-material'
-import { motion, AnimatePresence } from 'framer-motion'
-import { CustomAvatar, CustomButton } from '../common'
+import { motion } from 'framer-motion'
+import { CustomAvatar } from '../common'
+import EngagementBar from '../engagement/EngagementBar'
 import { formatDistanceToNow } from 'date-fns'
+import { Share as ShareIcon } from '@mui/icons-material'
 
 const PostCard = ({ post, onLike, onComment, onShare }) => {
-  const [isLiked, setIsLiked] = useState(post.isLiked || false)
   const [isBookmarked, setIsBookmarked] = useState(false)
-  const [likeCount, setLikeCount] = useState(post.likeCount || 0)
   const [anchorEl, setAnchorEl] = useState(null)
   const [imageError, setImageError] = useState(false)
-
-  const handleLike = async () => {
-    const newLikeState = !isLiked
-    setIsLiked(newLikeState)
-    setLikeCount(prev => newLikeState ? prev + 1 : prev - 1)
-
-    // Simulate API call
-    try {
-      await onLike?.(post.id, newLikeState)
-    } catch (err) {
-      // Revert on error
-      console.error(err)
-      setIsLiked(!newLikeState)
-      setLikeCount(prev => newLikeState ? prev - 1 : prev + 1)
-    }
-  }
 
   const handleBookmark = () => {
     setIsBookmarked(!isBookmarked)
@@ -210,86 +189,17 @@ const PostCard = ({ post, onLike, onComment, onShare }) => {
           )}
         </CardContent>
 
-        {/* Engagement Stats */}
-        {(likeCount > 0 || post.commentCount > 0) && (
-          <Box sx={{ px: 2, pb: 1 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              {likeCount > 0 && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <FavoriteIcon sx={{ fontSize: 16, color: 'error.main' }} />
-                  <Typography variant="caption" color="text.secondary">
-                    {likeCount} {likeCount === 1 ? 'like' : 'likes'}
-                  </Typography>
-                </Box>
-              )}
-              {post.commentCount > 0 && (
-                <Typography variant="caption" color="text.secondary">
-                  {post.commentCount} {post.commentCount === 1 ? 'comment' : 'comments'}
-                </Typography>
-              )}
-            </Box>
-          </Box>
-        )}
-
-        {/* Actions */}
-        <CardActions sx={{ pt: 0, px: 1 }}>
-          <Box sx={{ display: 'flex', width: '100%', justifyContent: 'space-around' }}>
-            <CustomButton
-              variant="text"
-              startIcon={
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={isLiked ? 'liked' : 'not-liked'}
-                    initial={{ scale: 0.8 }}
-                    animate={{ scale: 1 }}
-                    exit={{ scale: 0.8 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {isLiked ? (
-                      <FavoriteIcon sx={{ color: 'error.main' }} />
-                    ) : (
-                      <FavoriteBorderIcon />
-                    )}
-                  </motion.div>
-                </AnimatePresence>
-              }
-              onClick={handleLike}
-              sx={{
-                color: isLiked ? 'error.main' : 'text.secondary',
-                minWidth: 'auto',
-                px: 2
-              }}
-            >
-              Like
-            </CustomButton>
-
-            <CustomButton
-              variant="text"
-              startIcon={<CommentIcon />}
-              onClick={() => onComment?.(post)}
-              sx={{
-                color: 'text.secondary',
-                minWidth: 'auto',
-                px: 2
-              }}
-            >
-              Comment
-            </CustomButton>
-
-            <CustomButton
-              variant="text"
-              startIcon={<ShareIcon />}
-              onClick={handleShare}
-              sx={{
-                color: 'text.secondary',
-                minWidth: 'auto',
-                px: 2
-              }}
-            >
-              Share
-            </CustomButton>
-          </Box>
-        </CardActions>
+        {/* Engagement Bar */}
+        <EngagementBar
+          postId={post.id}
+          initialLikes={post.likeCount}
+          initialComments={post.commentCount}
+          initialViews={post.viewCount || 0}
+          initialLiked={post.isLiked}
+          onLike={onLike}
+          onComment={onComment}
+          onShare={onShare}
+        />
       </Card>
     </motion.div>
   )
